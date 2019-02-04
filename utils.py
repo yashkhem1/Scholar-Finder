@@ -5,13 +5,31 @@ import csv
 import APIURI
 
 
-def extract_eid_citations(key, query, index=0):
-    par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': index, 'httpAccept': 'application/json'}
+def extract_eid_citations(key, query):
+    par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': 0, 'httpAccept': 'application/json'}
     res = requests.get(APIURI.SEARCH, params=par)
     res.raise_for_status()
     js = res.json()
-    entries = js['search-results']['entry']
-    list_eids = [x['eid'] for x in entries]
+    search_results = js['search-results']
+    total_results = int(search_results['opensearch:totalResults'])
+    list_eids = []
+    # results_per_page = int(search_results['opensearch:itemsPerPage'])
+    # numSearch = int(total_results / results_per_page) + 1
+    start = 0
+    while(start < 5000 and start < total_results):
+        print('Hello')
+        count = min(total_results - start, 200)
+        par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': start, 'httpAccept': 'application/json', 'count': count}
+        try:
+            res = requests.get(APIURI.SEARCH, params=par)
+            entries = js['search-results']['entry']
+            list_eids = list_eids + [x['eid'] for x in entries]
+            start = start + count
+
+        except:
+            res.raise_for_status()
+            break
+
     # print(list_eids)
     return(list_eids)
 
@@ -109,15 +127,18 @@ def get_author_info(key, auth_id):
     return auth_info
 
 
-def get_authors_info(key, dict_author_id):
+def get_authors_info(key, dict_author_id, writer):
     for auth_id in list(dict_author_id.keys()):
         try:
             auth_info = get_author_info(key, auth_id)
             dict_author_id[auth_id] = dict(list(auth_info.items()) + list(dict_author_id[auth_id].items()))
+            auth_list = list(dict_author_id[auth_id].values())
+            writer.writerow(auth_list)
+
         except:
             a = 1
 
-    return dict_author_id
+    # return dict_author_id
 
 
 def queryGenerator(queryDict):

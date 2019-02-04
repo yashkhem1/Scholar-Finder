@@ -1,0 +1,7 @@
+SEARCH = "http://api.elsevier.com/content/search/scopus"
+SEARCH_AUTHOR = "http://api.elsevier.com/content/search/author"
+AUTHOR = "http://api.elsevier.com/content/author"
+ABSTRACT = "http://api.elsevier.com/content/abstract"
+CITATION = "http://api.elsevier.com/content/abstract/citations"
+SERIAL_SEARCH = "https://api.elsevier.com/content/serial/title"
+SERIAL_RETRIEVAL = "https://api.elsevier.com/content/serial/title/issn/"

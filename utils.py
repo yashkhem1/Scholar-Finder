@@ -6,29 +6,35 @@ import APIURI
 
 
 def extract_eid_citations(key, query):
-    par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': 0, 'httpAccept': 'application/json'}
+    par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': 0, 'httpAccept': 'application/json', 'count': 200, 'cursor': '*'}
     res = requests.get(APIURI.SEARCH, params=par)
     res.raise_for_status()
     js = res.json()
     search_results = js['search-results']
-    total_results = int(search_results['opensearch:totalResults'])
+    # total_results = int(search_results['opensearch:totalResults'])
     list_eids = []
     # results_per_page = int(search_results['opensearch:itemsPerPage'])
     # numSearch = int(total_results / results_per_page) + 1
     start = 0
-    while(start < 5000 and start < total_results):
+    while('entry' in list(search_results.keys())):
         print('Hello')
-        count = min(total_results - start, 200)
-        par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': start, 'httpAccept': 'application/json', 'count': count}
+        # count = min(total_results - start, 200)
+
         try:
-            res = requests.get(APIURI.SEARCH, params=par)
             entries = js['search-results']['entry']
             list_eids = list_eids + [x['eid'] for x in entries]
-            start = start + count
+            cursor_next = search_results['cursor']['@next']
+            par = {'apikey': key, 'query': query, 'sort': '-citedby-count,-coverDate', 'start': start, 'httpAccept': 'application/json', 'count': 200, 'cursor': cursor_next}
+            res = requests.get(APIURI.SEARCH, params=par)
+            res.raise_for_status()
+            js = res.json()
+            search_results = js['search-results']
+
+            # start = start + count
 
         except:
             res.raise_for_status()
-            break
+            # break
 
     # print(list_eids)
     return(list_eids)
@@ -106,7 +112,7 @@ def get_author_info(key, auth_id):
     js = res.json()
     js = js['author-retrieval-response'][0]
     auth_info = {}
-    auth_info['full-name'] = js['author-profile']['preferred-name']['given-name'] + js['author-profile']['preferred-name']['surname']
+    auth_info['full-name'] = js['author-profile']['preferred-name']['given-name'] + ' ' + js['author-profile']['preferred-name']['surname']
     auth_info['indexed-name'] = js['author-profile']['preferred-name']['indexed-name']
 
     if 'affiliation-current' in list(js['author-profile'].keys()):
@@ -128,12 +134,16 @@ def get_author_info(key, auth_id):
 
 
 def get_authors_info(key, dict_author_id, writer):
+    auth_length = len(dict_author_id.keys())
+    auth_count = 1
     for auth_id in list(dict_author_id.keys()):
         try:
+            print(str(auth_count) + '/' + str(auth_length) + ' Authors Processed')
             auth_info = get_author_info(key, auth_id)
             dict_author_id[auth_id] = dict(list(auth_info.items()) + list(dict_author_id[auth_id].items()))
             auth_list = list(dict_author_id[auth_id].values())
             writer.writerow(auth_list)
+            auth_count += 1
 
         except:
             a = 1

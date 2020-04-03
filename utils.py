@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import csv
 import APIURI
+import traceback
 
 
 def extract_eid_citations(key, query):
@@ -17,10 +18,11 @@ def extract_eid_citations(key, query):
     # numSearch = int(total_results / results_per_page) + 1
     start = 0
     while('entry' in list(search_results.keys())):
-        print('Hello')
+        # print('Hello')
         # count = min(total_results - start, 200)
 
         try:
+            print(len(list_eids))
             entries = js['search-results']['entry']
             list_eids = list_eids + [x['eid'] for x in entries]
             cursor_next = search_results['cursor']['@next']
@@ -32,7 +34,9 @@ def extract_eid_citations(key, query):
 
             # start = start + count
 
-        except:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             res.raise_for_status()
             # break
 
@@ -86,7 +90,8 @@ def get_author_keywords(key, eid):
 
 def get_dict_author_id(key, list_eid):
     dict_author_id = {}
-    for eid in list_eid:
+    for count,eid in enumerate(list_eid):
+        print(str(count),"/",str(len(list_eid))," documents processed")
         try:
             auid_list, auth_keywords = get_author_id(key, eid)
             for auid in auid_list:
@@ -97,7 +102,9 @@ def get_dict_author_id(key, list_eid):
                     dict_author_id[auid] = {}
                     dict_author_id[auid]['keywords'] = auth_keywords
 
-        except:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             a = 1
     # print(dict_author_id)
     return dict_author_id
@@ -122,7 +129,9 @@ def get_author_info(key, auth_id):
                 auth_info['affiliation-current'] = temp_list[0]['ip-doc']['afdispname']
             else:
                 auth_info['affiliation-current'] = temp_list['ip-doc']['afdispname']
-        except:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             auth_info['affiliation-current'] = 'None'
     else:
         auth_info['affiliation-current'] = 'None'
@@ -145,8 +154,10 @@ def get_authors_info(key, dict_author_id, writer):
             writer.writerow(auth_list)
             auth_count += 1
 
-        except:
-            a = 1
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            # a = 1
 
     # return dict_author_id
 
